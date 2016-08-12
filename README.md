@@ -15,4 +15,4 @@ Based on [shake](http://shakebuild.com) to provide simple native compilation bui
 
 # How to use
 
-there is an example in the [example directory](example)
+there is an example in the [example directory](examples)
