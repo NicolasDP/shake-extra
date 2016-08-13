@@ -80,7 +80,7 @@ instance Compiler CLANG (File Source) (File Object) where
     genOutputExt _ _ _ = "o"
     compile _ (File i) (File o) e = do
       let m = o -<.> "m"
-      r <- cmd "clang" "-c" e "-MMD -MF" [m] "-o" o i
+      r <- cmd "clang" "-fPIC" "-c" e "-MMD -MF" [m] "-o" o i
       needMakefileDependencies m
       return r
 instance Compiler CLANG [File Object] (File SharedLib) where
@@ -91,7 +91,7 @@ instance Compiler CLANG [File Object] (File StaticLib) where
     compile _ = compile AR
 instance Compiler CLANG [File Object] (File Executable) where
     genOutputExt _ _ _ = ""
-    compile _ is (File o) e = cmd "clang" e "-o" o $ map (\(File f) -> f) is
+    compile _ is (File o) e = cmd "clang" "-o" o (map (\(File f) -> f) is) e
 
 data GCC = GCC deriving (Show, Typeable, Data)
 instance AOC GCC where aoc _ = "gcc"
@@ -101,15 +101,15 @@ instance Compiler GCC (File Source) (File Object) where
     genOutputExt _ = genOutputExt CLANG
     compile _ (File i) (File o) e = do
       let m = o -<.> "m"
-      r <- cmd "gcc" "-c" e "-fPIC" "-MMD -MF" [m] "-o" o i
+      r <- cmd "gcc" "-fPIC" "-c" "-o" o e "-MMD -MF" [m] i
       needMakefileDependencies m
       return r
 instance Compiler GCC [File Object] (File SharedLib) where
     genOutputExt _ _ _ = ".so"
-    compile _ is (File o) e = cmd "gcc" "-shared" e "-o" o $ map (\(File f) -> f) is
+    compile _ is (File o) e = cmd "gcc" "-shared" "-o" o e $ map (\(File f) -> f) is
 instance Compiler GCC [File Object] (File StaticLib) where
     genOutputExt _ = genOutputExt AR
     compile _ = compile AR
 instance Compiler GCC [File Object] (File Executable) where
     genOutputExt _ _ _ = ""
-    compile _ is (File o) e = cmd "gcc" e "-o" o $ map (\(File f) -> f) is
+    compile _ is (File o) e = cmd "gcc" "-o" o (map (\(File f) -> f) is) e
