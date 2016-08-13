@@ -11,7 +11,7 @@ project = ProjectConfig
   , getExtraFlags = ["-g", "-ggdb", "-W", "-Wall", "-Wextra"]
   , getArch = AMD64
   , getOS   = OSX
-  , getCompiler = CLANG
+  , getCompiler = GCC
   }
 
 main :: IO ()

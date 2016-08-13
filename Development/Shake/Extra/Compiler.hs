@@ -19,6 +19,7 @@ module Development.Shake.Extra.Compiler
     , Executable(..)
 
     , CLANG(..)
+    , GCC(..)
     ) where
 
 import Data.Typeable
@@ -28,6 +29,8 @@ import System.Info (arch)
 import Data.String
 
 import Development.Shake (CmdResult(..), Action, cmd)
+import Development.Shake.FilePath ((-<.>))
+import Development.Shake.Util (needMakefileDependencies)
 import Development.Shake.Extra.AOC (AOC(..))
 
 newtype ModuleName = ModuleName String
@@ -52,7 +55,6 @@ instance BuildType Executable where fromBT _ = "bin"
 
 class (AOC compiler, Show compiler) => CompilerCommon compiler where
     toIncludeFlags :: compiler -> [IncludeDir] -> [String]
-    toLibraryFlags :: compiler -> [FilePath] -> [String]
 class CompilerCommon compiler => Compiler compiler input output where
     genOutputExt :: compiler -> Proxy input -> Proxy output -> String
     compile :: CmdResult r
@@ -66,7 +68,6 @@ data AR = AR deriving (Show, Typeable, Data)
 instance AOC AR where aoc = show
 instance CompilerCommon AR where
     toIncludeFlags _ = map (\(IncludeDir i) -> "-I" ++ i)
-    toLibraryFlags _ = map ("-l" ++)
 instance Compiler AR [File Object] (File StaticLib) where
     genOutputExt _ _ _ = "a"
     compile _ is (File o) e = cmd "ar" "-rcs" o $ map (\(File i) -> i) is
@@ -75,12 +76,15 @@ data CLANG = CLANG deriving (Show, Typeable, Data)
 instance AOC CLANG where aoc _ = "clang"
 instance CompilerCommon CLANG where
     toIncludeFlags _ = map (\(IncludeDir i) -> "-I" ++ i)
-    toLibraryFlags _ = map ("-L" ++)
 instance Compiler CLANG (File Source) (File Object) where
     genOutputExt _ _ _ = "o"
-    compile _ (File i) (File o) e = cmd "clang" "-c" e "-o" o i
+    compile _ (File i) (File o) e = do
+      let m = o -<.> "m"
+      r <- cmd "clang" "-c" e "-MMD -MF" [m] "-o" o i
+      needMakefileDependencies m
+      return r
 instance Compiler CLANG [File Object] (File SharedLib) where
-    genOutputExt _ _ _ = ".dynlib"
+    genOutputExt _ _ _ = ".so"
     compile _ is (File o) e = cmd "clang" "-shared" e "-o" o $ map (\(File f) -> f) is
 instance Compiler CLANG [File Object] (File StaticLib) where
     genOutputExt _ = genOutputExt AR
@@ -88,3 +92,24 @@ instance Compiler CLANG [File Object] (File StaticLib) where
 instance Compiler CLANG [File Object] (File Executable) where
     genOutputExt _ _ _ = ""
     compile _ is (File o) e = cmd "clang" e "-o" o $ map (\(File f) -> f) is
+
+data GCC = GCC deriving (Show, Typeable, Data)
+instance AOC GCC where aoc _ = "gcc"
+instance CompilerCommon GCC where
+    toIncludeFlags _ = toIncludeFlags CLANG
+instance Compiler GCC (File Source) (File Object) where
+    genOutputExt _ = genOutputExt CLANG
+    compile _ (File i) (File o) e = do
+      let m = o -<.> "m"
+      r <- cmd "gcc" "-c" e "-MMD -MF" [m] "-o" o i
+      needMakefileDependencies m
+      return r
+instance Compiler GCC [File Object] (File SharedLib) where
+    genOutputExt _ _ _ = ".so"
+    compile _ is (File o) e = cmd "gcc" "-shared" e "-o" o $ map (\(File f) -> f) is
+instance Compiler GCC [File Object] (File StaticLib) where
+    genOutputExt _ = genOutputExt AR
+    compile _ = compile AR
+instance Compiler GCC [File Object] (File Executable) where
+    genOutputExt _ _ _ = ""
+    compile _ is (File o) e = cmd "gcc" e "-o" o $ map (\(File f) -> f) is
