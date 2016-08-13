@@ -130,11 +130,12 @@ script:
   set +ex
 - |
   set -ex
-  pushd examples
   case "$BUILD" in
     stack)
-      stack install
-      ~/.local/bin/make
+      stack ghc -- example/ShakeFile.hs
+      pushd examples
+      ./ShakeFile
+      popd
       ;;
     cabal)
       cabal --version
@@ -142,5 +143,4 @@ script:
       cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
       ;;
   esac
-  popd
   set +ex
