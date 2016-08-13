@@ -101,7 +101,7 @@ instance Compiler GCC (File Source) (File Object) where
     genOutputExt _ = genOutputExt CLANG
     compile _ (File i) (File o) e = do
       let m = o -<.> "m"
-      r <- cmd "gcc" "-c" e "-MMD -MF" [m] "-o" o i
+      r <- cmd "gcc" "-c" e "-fPIC" "-MMD -MF" [m] "-o" o i
       needMakefileDependencies m
       return r
 instance Compiler GCC [File Object] (File SharedLib) where
