@@ -130,6 +130,8 @@ script:
   set +ex
 - |
   set -ex
+  which gcc || true
+  which clang || true
   case "$BUILD" in
     stack)
       stack ghc -- examples/ShakeFile.hs
