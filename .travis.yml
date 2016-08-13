@@ -134,7 +134,9 @@ script:
     stack)
       stack ghc -- examples/ShakeFile.hs
       pushd examples
-      ./ShakeFile
+      [ "${TRAVIS_OS_NAME}" = "osx" ] && ./ShakeFile --clang test || \
+        [ "${TRAVIS_OS_NAME}" = "linux" ] && ./ShakeFile --gcc test || \
+        false
       popd
       ;;
     cabal)

@@ -13,5 +13,6 @@
 
 int main(void)
 {
-  return printf("%s %s!\n", hello(), world());
+  printf("%s %s!\n", hello(), world());
+  return 0;
 }
