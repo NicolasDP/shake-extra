@@ -132,7 +132,7 @@ script:
   set -ex
   case "$BUILD" in
     stack)
-      stack ghc -- example/ShakeFile.hs
+      stack ghc -- examples/ShakeFile.hs
       pushd examples
       ./ShakeFile
       popd
