@@ -1,2 +1,7 @@
 *.swp
 .stack-work
+
+*.o
+*.hi
+_build
+ShakeFile
