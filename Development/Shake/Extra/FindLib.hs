@@ -2,7 +2,8 @@
 
 module Development.Shake.Extra.FindLib
   ( Hint
-  , findLib
+  , FindLibrary(..)
+  , findDependency
   ) where
 
 import Data.Data
@@ -20,13 +21,16 @@ import Development.Shake.Extra.ProjectConfig
 
 type Hint = FilePath
 
-findLib :: (OS os, Arch arch, CompilerCommon compiler)
-        => ProjectConfig arch os compiler
-        -> [FilePattern] -- Lib Name (<lib>name<.(a|so|dynlib|dll)>)
-        -> [Hint]
-        -> Rules (Dependency arch os compiler)
-findLib pc libpattern userHints = do
-  let hints = userHints ++ ["/usr/lib", "/usr/local/lib"]
+class FindLibrary arch os compiler lib where
+  findLibrary :: ProjectConfig arch os compiler -> lib -> [Hint] -> Rules (Dependency arch os compiler)
+
+findDependency :: (OS os, Arch arch, CompilerCommon compiler)
+               => ProjectConfig arch os compiler
+               -> [FilePattern] -- Lib Name (<lib>name<.(a|so|dynlib|dll)>)
+               -> [Hint]
+               -> (FilePath -> Result arch os compiler)
+               -> Rules (Dependency arch os compiler)
+findDependency pc libpattern hints f = do
   rs <- concat <$> (liftIO $ mapM (\h -> map (h </>) <$> getDirectoryFilesIO h libpattern) hints)
   when (null rs) $
     error $ "error, cannot find " ++ show libpattern ++ " in " ++ show hints
@@ -34,7 +38,7 @@ findLib pc libpattern userHints = do
     { dependencyName         = head rs
     , dependencyIncludeDirs  = []
     , dependencyDependencies = []
-    , dependencyResults      = map (ResultDepLib . File) rs
+    , dependencyResults      = map f rs
     }
 
 --

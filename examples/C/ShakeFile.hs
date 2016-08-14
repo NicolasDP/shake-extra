@@ -39,12 +39,14 @@ main = shakeArgsWith shakeOptions{shakeFiles="_build"} flags $ \flags targets ->
           else shakeIt targets $ project CLANG OSX
     _ -> error "Windows is not supported yet"
 
-class FindLibrary arch os compiler lib where
-  findLibrary :: ProjectConfig arch os compiler -> lib -> [Hint] -> Rules (Dependency arch os compiler)
-
 data PThread = PThread deriving (Show)
 instance (Arch arch,CompilerCommon compiler) => FindLibrary arch Linux compiler PThread where
-  findLibrary p _ = findLib p ["libpthread.so", "*/libpthread.so"]
+  findLibrary p _ userHints =
+    findDependency
+      p
+      ["libpthread.so", "*/libpthread.so"]
+      (userHints ++ ["/usr/lib", "/usr/local/lib"])
+      (ResultSharedLib . File)
 instance Arch arch => FindLibrary arch OSX   CLANG    PThread where
   findLibrary _ p _ = do
     let emptyRule = "empty rule " ++ show p
