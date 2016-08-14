@@ -27,8 +27,8 @@ main :: IO ()
 main = shakeArgsWith shakeOptions{shakeFiles="_build"} flags $ \flags targets -> return $ Just $ do
   if null targets then want ["all"] else want targets
   if CompilerGCC `elem` flags
-    then shakeIt targets $ project (GXX     CxxStd11)
-    else shakeIt targets $ project (CLANGXX CxxStd11)
+    then shakeIt targets $ project (GXX     CxxStd)
+    else shakeIt targets $ project (CLANGXX CxxStd)
 
 shakeIt targets projCfg = do
   libA <- makeStaticLib projCfg "A" [] ["libA"] ["libA/A.cc"]
