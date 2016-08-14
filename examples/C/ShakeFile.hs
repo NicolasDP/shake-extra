@@ -31,7 +31,7 @@ main = shakeArgsWith shakeOptions{shakeFiles="_build"} flags $ \flags targets ->
     else shakeIt targets $ project CLANG
 
 shakeIt targets projCfg = do
-  pthread <- findLib projCfg ["**pthread.*"] []
+  pthread <- findLib projCfg ["libpthread.so", "*/libpthread.so"] []
   libA <- makeStaticLib projCfg "A" [] ["libA"] ["libA/A.c"]
   libB <- makeSharedLib projCfg "B" [] ["libB"] ["libB/B.c"]
   exe <- makeExecutable projCfg "app" [pthread, libA, libB] [] ["app/main.c"]
