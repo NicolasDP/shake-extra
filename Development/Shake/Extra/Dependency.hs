@@ -4,14 +4,19 @@ module Development.Shake.Extra.Dependency
   , Result(..)
   , includeDependencies
   , addDependenciesLib
+  , DepFile(..)
   ) where
 
 import Development.Shake.Extra.Compiler
 
+newtype DepFile = DepFile (File FilePath)
+instance BuildType DepFile where fromBT _ = "deps"
+
 data Result arch os compiler
-    = ResultSharedLib (File SharedLib)
-    | ResultStaticLib (File StaticLib)
+    = ResultSharedLib  (File SharedLib)
+    | ResultStaticLib  (File StaticLib)
     | ResultExecutable (File Executable)
+    | ResultDepLib     (File DepFile)
   deriving (Show, Eq)
 
 type Dependencies arch os compiler = [Dependency arch os compiler]
@@ -37,4 +42,5 @@ addDependenciesLib = concatMap addDependencyLib
     extractLib []                            = []
     extractLib (ResultStaticLib (File f):xs) = f : extractLib xs
     extractLib (ResultSharedLib (File f):xs) = f : extractLib xs
+    extractLib (ResultDepLib    (File f):xs) = f : extractLib xs
     extractLib (_                       :xs) =     extractLib xs

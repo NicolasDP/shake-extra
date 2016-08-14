@@ -7,12 +7,22 @@
  */
 
 #include "stdio.h"
+#include "pthread.h"
 
 #include "A.h"
 #include "B.h"
 
+void* print_it(void* p)
+{
+  char const* w = (char const*) p;
+  printf("%s %s!\n", hello(), w);
+  return NULL;
+}
+
 int main(void)
 {
-  printf("%s %s!\n", hello(), world());
+  pthread_t thread;
+  pthread_create(&thread, NULL, print_it, (void*)world());
+  pthread_join(thread, NULL);
   return 0;
 }

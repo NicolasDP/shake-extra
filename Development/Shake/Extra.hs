@@ -23,41 +23,8 @@ import Development.Shake.Extra.OS         as X
 import Development.Shake.Extra.Arch       as X
 import Development.Shake.Extra.Compiler   as X
 import Development.Shake.Extra.Dependency as X
-
-data ProjectConfig a o c = ProjectConfig
-    { outputDir   :: FilePath
-    , buildDebug  :: Bool
-    , getExtraFlags :: [String]
-    , getArch     :: a
-    , getOS       :: o
-    , getCompiler :: c
-    }
-
-projectConfigDebugOrRelease :: (CompilerCommon compiler, Arch arch, OS os)
-                            => ProjectConfig arch os compiler
-                            -> FilePath
-projectConfigDebugOrRelease pc = if buildDebug pc then "debug" else "release"
-
-
-projectConfigOutputDir :: (CompilerCommon compiler, Arch arch, OS os)
-                       => ProjectConfig arch os compiler
-                       -> ModuleName
-                       -> FilePath
-projectConfigOutputDir pc (ModuleName mn) =
-    outputDir pc </> mn </> (aoc (getArch pc) ++ "-" ++ aoc (getOS pc) ++ "-" ++ aoc (getCompiler pc))
-
-projectConfigOutputResultDir :: (CompilerCommon compiler, Arch arch, OS os, BuildType buildtype)
-                             => ProjectConfig arch os compiler
-                             -> ModuleName
-                             -> File buildtype
-projectConfigOutputResultDir = projectConfigOutputResultDir_ Proxy
-projectConfigOutputResultDir_ :: (CompilerCommon compiler, Arch arch, OS os, BuildType buildtype)
-                              => Proxy buildtype
-                              -> ProjectConfig arch os compiler
-                              -> ModuleName
-                              -> File buildtype
-projectConfigOutputResultDir_ p pc mn = File $
-  projectConfigOutputDir pc mn </> fromBT p </> projectConfigDebugOrRelease pc
+import Development.Shake.Extra.ProjectConfig as X
+import Development.Shake.Extra.FindLib as X
 
 makeObject :: (Compiler compiler (File Source) (File Object), OS os, Arch arch)
            => ProjectConfig arch os compiler
