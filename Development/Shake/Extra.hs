@@ -18,10 +18,11 @@ import Data.Proxy
 import Development.Shake as Shake
 import Development.Shake.FilePath as Shake
 
-import Development.Shake.Extra.AOC  (AOC(..))
-import Development.Shake.Extra.OS       as X
-import Development.Shake.Extra.Arch     as X
-import Development.Shake.Extra.Compiler as X
+import Development.Shake.Extra.AOC        as X
+import Development.Shake.Extra.OS         as X
+import Development.Shake.Extra.Arch       as X
+import Development.Shake.Extra.Compiler   as X
+import Development.Shake.Extra.Dependency as X
 
 data ProjectConfig a o c = ProjectConfig
     { outputDir   :: FilePath
@@ -142,34 +143,3 @@ makeExecutable :: ( Compiler compiler (File Source) (File Object)
                -> [File Source]
                -> Rules (Dependency arch os compiler)
 makeExecutable = makeOutput Proxy ResultExecutable
-
-data Result arch os compiler
-    = ResultSharedLib (File SharedLib)
-    | ResultStaticLib (File StaticLib)
-    | ResultExecutable (File Executable)
-  deriving (Show, Eq)
-
-type Dependencies arch os compiler = [Dependency arch os compiler]
-data Dependency arch os compiler = Dependency
-    { dependencyName         :: String
-    , dependencyIncludeDirs  :: [IncludeDir]
-    , dependencyDependencies :: [String]
-    , dependencyResults      :: [Result arch os compiler]
-    }
-  deriving (Show, Eq)
-instance Ord (Dependency os arch compiler) where
-    compare d1 d2 = compare (dependencyName d1) (dependencyName d2)
-
-includeDependencies :: Dependencies arch os compiler -> [IncludeDir]
-includeDependencies = concatMap dependencyIncludeDirs
-
-addDependenciesLib :: Dependencies arch os compiler -> [FilePath]
-addDependenciesLib = concatMap addDependencyLib
-  where
-    addDependencyLib :: Dependency arch os compiler -> [FilePath]
-    addDependencyLib = extractLib . dependencyResults
-    extractLib :: [Result arch os compiler] -> [FilePath]
-    extractLib []                            = []
-    extractLib (ResultStaticLib (File f):xs) = f : extractLib xs
-    extractLib (ResultSharedLib (File f):xs) = f : extractLib xs
-    extractLib (_                       :xs) =     extractLib xs
