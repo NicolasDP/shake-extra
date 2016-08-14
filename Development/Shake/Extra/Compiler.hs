@@ -21,6 +21,8 @@ module Development.Shake.Extra.Compiler
     , CLANG(..)
     , GCC(..)
     , AR(..)
+
+    , CxxSTDVersion(..)
     ) where
 
 import Data.Typeable
@@ -56,6 +58,7 @@ instance BuildType Executable where fromBT _ = "bin"
 
 class (AOC compiler, Show compiler) => CompilerCommon compiler where
     toIncludeFlags :: compiler -> [IncludeDir] -> [String]
+    toCmd :: compiler -> [String]
 class CompilerCommon compiler => Compiler compiler input output where
     genOutputExt :: compiler -> Proxy input -> Proxy output -> String
     compile :: CmdResult r
@@ -69,48 +72,63 @@ data AR = AR deriving (Show, Typeable, Data)
 instance AOC AR where aoc = show
 instance CompilerCommon AR where
     toIncludeFlags _ = map (\(IncludeDir i) -> "-I" ++ i)
+    toCmd _ = ["ar"]
 instance Compiler AR [File Object] (File StaticLib) where
     genOutputExt _ _ _ = "a"
-    compile _ is (File o) e = cmd "ar" "-rcs" o $ map (\(File i) -> i) is
+    compile c is (File o) e = cmd (toCmd c) "-rcs" o $ map (\(File i) -> i) is
 
-data CLANG = CLANG deriving (Show, Typeable, Data)
+data CxxSTDVersion = CxxStd | CxxStd11 | CxxStd14
+  deriving (Show, Eq, Ord, Enum, Bounded, Typeable, Data)
+
+data CLANG
+    = CLANG | CLANGXX CxxSTDVersion
+  deriving (Show, Eq, Typeable, Data)
+
 instance AOC CLANG where aoc _ = "clang"
 instance CompilerCommon CLANG where
     toIncludeFlags _ = map (\(IncludeDir i) -> "-I" ++ i)
+    toCmd CLANG = ["clang"]
+    toCmd (CLANGXX CxxStd)   = ["clang++"]
+    toCmd (CLANGXX CxxStd11) = ["clang++", "-std=c++11"]
+    toCmd (CLANGXX CxxStd14) = ["clang++", "-std=c++14"]
 instance Compiler CLANG (File Source) (File Object) where
     genOutputExt _ _ _ = "o"
-    compile _ (File i) (File o) e = do
+    compile c (File i) (File o) e = do
       let m = o -<.> "m"
-      r <- cmd "clang" "-fPIC" "-c" e "-MMD -MF" [m] "-o" o i
+      r <- cmd (toCmd c) "-fPIC" "-c" e "-MMD -MF" [m] "-o" o i
       needMakefileDependencies m
       return r
 instance Compiler CLANG [File Object] (File SharedLib) where
     genOutputExt _ _ _ = ".so"
-    compile _ is (File o) e = cmd "clang" "-shared" e "-o" o $ map (\(File f) -> f) is
+    compile c is (File o) e = cmd (toCmd c) "-shared" e "-o" o $ map (\(File f) -> f) is
 instance Compiler CLANG [File Object] (File StaticLib) where
     genOutputExt _ = genOutputExt AR
     compile _ = compile AR
 instance Compiler CLANG [File Object] (File Executable) where
     genOutputExt _ _ _ = ""
-    compile _ is (File o) = cmd "clang" "-o" o (map (\(File f) -> f) is)
+    compile c is (File o) = cmd (toCmd c) "-o" o (map (\(File f) -> f) is)
 
-data GCC = GCC deriving (Show, Typeable, Data)
+data GCC = GCC | GXX CxxSTDVersion deriving (Show, Typeable, Data)
 instance AOC GCC where aoc _ = "gcc"
 instance CompilerCommon GCC where
     toIncludeFlags _ = toIncludeFlags CLANG
+    toCmd GCC = ["gcc"]
+    toCmd (GXX CxxStd)   = ["g++"]
+    toCmd (GXX CxxStd11) = ["g++", "-std=c++11"]
+    toCmd (GXX CxxStd14) = ["g++", "-std=c++14"]
 instance Compiler GCC (File Source) (File Object) where
     genOutputExt _ = genOutputExt CLANG
-    compile _ (File i) (File o) e = do
+    compile c (File i) (File o) e = do
       let m = o -<.> "m"
-      r <- cmd "gcc" "-fPIC" "-c" "-o" o e "-MMD -MF" [m] i
+      r <- cmd (toCmd c) "-fPIC" "-c" "-o" o e "-MMD -MF" [m] i
       needMakefileDependencies m
       return r
 instance Compiler GCC [File Object] (File SharedLib) where
     genOutputExt _ _ _ = ".so"
-    compile _ is (File o) e = cmd "gcc" "-shared" "-o" o e $ map (\(File f) -> f) is
+    compile c is (File o) e = cmd (toCmd c) "-shared" "-o" o e $ map (\(File f) -> f) is
 instance Compiler GCC [File Object] (File StaticLib) where
     genOutputExt _ = genOutputExt AR
     compile _ = compile AR
 instance Compiler GCC [File Object] (File Executable) where
     genOutputExt _ _ _ = ""
-    compile _ is (File o) = cmd "gcc" "-o" o (map (\(File f) -> f) is)
+    compile c is (File o) = cmd (toCmd c) "-o" o (map (\(File f) -> f) is)
