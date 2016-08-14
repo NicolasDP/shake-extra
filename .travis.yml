@@ -134,8 +134,8 @@ script:
   which clang || true
   case "$BUILD" in
     stack)
-      stack ghc -- examples/ShakeFile.hs
-      pushd examples
+      stack ghc -- examples/C/ShakeFile.hs
+      pushd examples/C
       ./ShakeFile --gcc   --trace test
       ./ShakeFile --clang --trace test
       popd
