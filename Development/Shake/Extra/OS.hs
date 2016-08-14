@@ -7,6 +7,7 @@ module Development.Shake.Extra.OS
     , Windows(..)
 
     , currentOS
+    , CurrentOS(..)
     ) where
 
 import Data.Typeable
