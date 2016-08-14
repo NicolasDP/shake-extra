@@ -167,8 +167,9 @@ addDependenciesLib :: Dependencies arch os compiler -> [FilePath]
 addDependenciesLib = concatMap addDependencyLib
   where
     addDependencyLib :: Dependency arch os compiler -> [FilePath]
-    addDependencyLib = map extractLib . dependencyResults
-    extractLib :: Result arch os compiler -> FilePath
-    extractLib (ResultStaticLib (File f)) = f
-    extractLib (ResultSharedLib (File f)) = f
-    extractLib (ResultExecutable (File f)) = f
+    addDependencyLib = extractLib . dependencyResults
+    extractLib :: [Result arch os compiler] -> [FilePath]
+    extractLib []                            = []
+    extractLib (ResultStaticLib (File f):xs) = f : extractLib xs
+    extractLib (ResultSharedLib (File f):xs) = f : extractLib xs
+    extractLib (_                       :xs) =     extractLib xs
