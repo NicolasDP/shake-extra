@@ -31,9 +31,10 @@ main = shakeArgsWith shakeOptions{shakeFiles="_build"} flags $ \flags targets ->
     else shakeIt targets $ project CLANG
 
 shakeIt targets projCfg = do
+  pthread <- findLib projCfg ["*pthread.*"] ["/usr/lib/x86_64-linux-gnu"]
   libA <- makeStaticLib projCfg "A" [] ["libA"] ["libA/A.c"]
   libB <- makeSharedLib projCfg "B" [] ["libB"] ["libB/B.c"]
-  exe <- makeExecutable projCfg "app" [libA, libB] [] ["app/main.c"]
+  exe <- makeExecutable projCfg "app" [pthread, libA, libB] [] ["app/main.c"]
   phony "all" $ need [dependencyName exe]
   phony "test" $ do
     need [dependencyName exe]
