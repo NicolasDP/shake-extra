@@ -31,10 +31,6 @@ matrix:
     compiler: ": #stack default"
     addons: {apt: {packages: [ghc-7.10.3], sources: [hvr-ghc]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-5"
-    compiler: ": #stack 7.10.3"
-    addons: {apt: {packages: [ghc-7.10.3], sources: [hvr-ghc]}}
-
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
@@ -45,10 +41,7 @@ matrix:
     compiler: ": #stack default osx"
     os: osx
 
-  - env: BUILD=stack ARGS="--resolver lts-5"
-    compiler: ": #stack 7.10.3 osx"
-    os: osx
-
+  # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly osx"
     os: osx
@@ -134,11 +127,13 @@ script:
   which clang || true
   case "$BUILD" in
     stack)
-      stack ghc -- examples/C/ShakeFile.hs
-      pushd examples/C
-      ./ShakeFile --gcc   --trace test
-      ./ShakeFile --clang --trace test
-      popd
+      for test in $(ls examples); do
+        stack ghc -- examples/${test}/ShakeFile.hs
+        pushd examples/${test}
+        ./ShakeFile --gcc   --trace test
+        ./ShakeFile --clang --trace test
+        popd
+      done
       ;;
     cabal)
       cabal --version
