@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      .
   exposed-modules:    Development.Shake.Extra
-  other-modules:      Development.Shake.Extra.AOC
+                      Development.Shake.Extra.AOC
                       Development.Shake.Extra.Arch
                       Development.Shake.Extra.OS
                       Development.Shake.Extra.Compiler

@@ -20,6 +20,7 @@ module Development.Shake.Extra.Compiler
 
     , CLANG(..)
     , GCC(..)
+    , AR(..)
     ) where
 
 import Data.Typeable
@@ -91,7 +92,7 @@ instance Compiler CLANG [File Object] (File StaticLib) where
     compile _ = compile AR
 instance Compiler CLANG [File Object] (File Executable) where
     genOutputExt _ _ _ = ""
-    compile _ is (File o) e = cmd "clang" "-o" o (map (\(File f) -> f) is) e
+    compile _ is (File o) = cmd "clang" "-o" o (map (\(File f) -> f) is)
 
 data GCC = GCC deriving (Show, Typeable, Data)
 instance AOC GCC where aoc _ = "gcc"
@@ -112,4 +113,4 @@ instance Compiler GCC [File Object] (File StaticLib) where
     compile _ = compile AR
 instance Compiler GCC [File Object] (File Executable) where
     genOutputExt _ _ _ = ""
-    compile _ is (File o) e = cmd "gcc" "-o" o (map (\(File f) -> f) is) e
+    compile _ is (File o) = cmd "gcc" "-o" o (map (\(File f) -> f) is)
